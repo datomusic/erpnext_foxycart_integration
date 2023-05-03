@@ -8,7 +8,7 @@ from werkzeug.wrappers import Response
 
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
-from frappe.utils import cint
+from frappe.utils import cint, nowdate
 
 @frappe.whitelist(allow_guest=True)
 def push():
@@ -118,14 +118,12 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 		else:
 			sales_items.append({
 				"item_code": product_name,
-				"item_name": product_name,
+				"delivery_date": nowdate(),
 				"qty": item.get("quantity"),
-				"uom": foxycart_settings.uom or "Nos",
-				"conversion_factor": foxycart_settings.conversion_factor or 1,
 				"rate": item.get("price")
 			})
 
-	#sales_order.set("sales_order_details", sales_items)
+	sales_order.set("sales_order_details", sales_items)
 	
 	# taxes = []
 	# if cint(foxycart_data.get("shipping_total")) or foxycart_data.get("shipto_shipping_service_description"):
@@ -148,6 +146,7 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 	sales_order.shipping_address_name = address
 	# sales_order.status = "Draft"
 	sales_order.flags.ignore_permissions = True
+	sales_order.flags.ignore_mandatory = True
 	sales_order.save()
 	# sales_order.submit()
 
