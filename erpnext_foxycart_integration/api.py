@@ -26,12 +26,12 @@ def push():
 		try:
 			fd = json.loads(frappe.request.data)
 			process_new_order(fd)
-			response.data = {"status": "ok"}
+			return Response("done")
 		except Exception as e:
 			# Log to Frappe error log
-			frappe.error_log(frappe.get_traceback(), f"{e}")
-			response.data = {"error": str(e)}
-			
+			frappe.log_error(e)
+			return Response(f"Error: {e}")
+
 		return response
 
 	# Otherwise, treat the incoming request as invalid
@@ -155,7 +155,7 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 	return sales_order.name
 
 def find_address(customer, foxycart_data):
-	address = frappe.get_all("Address", filters={
+    address = frappe.get_all("Address", filters={
 		"address_title": '%s %s' % (foxycart_data.get("first_name"), foxycart_data.get("last_name")),
 		"address_line1": foxycart_data.get("address1"),
 		"address_line2": foxycart_data.get("address2"),
@@ -171,11 +171,10 @@ def make_address(customer, foxycart_data):
 	print(foxycart_data)
 	address = frappe.new_doc("Address")
 
-	billing_data = foxycart_data.get('_embedded').get("fx:billing_addresses")[0]
+	shipping_data = foxycart_data.get('_embedded').get("fx:shipments")[0]
 	customer_data = foxycart_data.get('_embedded').get("fx:customer")
-    shipping_data = foxycart_data.get('_embedded').get("fx:shipments")[0]
-    
-	if billing_data:
+	
+	if shipping_data:
 		country_code = shipping_data.get("customer_country")
 
 		country = frappe.get_all("Country", filters={"code": country_code})[0]
