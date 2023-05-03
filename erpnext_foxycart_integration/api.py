@@ -101,7 +101,7 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 	sales_order.update({
 		"customer": customer,
 		"order_type": "Shopping Cart",
-		"po_no": foxycart_data.get("id", "")
+		"po_no": foxycart_data.get("id")
 	})
 	sales_items = []
 	
