@@ -156,14 +156,16 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 	return sales_order.name
 
 def find_address(customer, foxycart_data):
+	shipping_data = foxycart_data.get('_embedded').get("fx:shipments")[0]
+
 	address = frappe.get_all("Address", filters={
-		"address_title": '%s %s' % (foxycart_data.get("first_name"), foxycart_data.get("last_name")),
-		"address_line1": foxycart_data.get("address1"),
-		"address_line2": foxycart_data.get("address2"),
+		"address_title": '%s %s' % (shipping_data.get("first_name"), shipping_data.get("last_name")),
+		"address_line1": shipping_data.get("address1"),
+		"address_line2": shipping_data.get("address2"),
 		"address_type": "Shipping",
-		"city": foxycart_data.get("city"),
-		"state": foxycart_data.get("region"),
-		"pincode": foxycart_data.get("postal_code")
+		"city": shipping_data.get("city"),
+		"state": shipping_data.get("region"),
+		"pincode": shipping_data.get("postal_code")
 	})
 	if address:
 		return address[0].name
