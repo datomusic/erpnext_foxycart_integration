@@ -174,7 +174,7 @@ def make_address(customer, foxycart_data):
 	billing_data = foxycart_data.get('_embedded').get("fx:billing_addresses")[0]
 	customer_data = foxycart_data.get('_embedded').get("fx:customer")
     shipping_data = foxycart_data.get('_embedded').get("fx:shipments")[0]
-
+    
 	if billing_data:
 		country_code = shipping_data.get("customer_country")
 
