@@ -187,7 +187,7 @@ def make_address(customer, foxycart_data):
 			territory_name = "All Territories"
 
 		address.update({
-			"address_title": '%s %s' % (foxycart_data.get("first_name"), foxycart_data.get("last_name")),
+			"address_title": '%s %s' % (shipping_data.get("first_name"), shipping_data.get("last_name")),
 			"address_line1": shipping_data.get("address1"),
 			"address_line2": shipping_data.get("address2"),
 			"address_type": "Shipping",
