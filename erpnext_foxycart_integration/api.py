@@ -175,7 +175,7 @@ def make_address(customer, foxycart_data):
 	customer_data = foxycart_data.get('_embedded').get("fx:customer")
 	
 	if shipping_data:
-		country_code = shipping_data.get("customer_country")
+		country_code = shipping_data.get("country")
 
 		country = frappe.get_all("Country", filters={"code": country_code})[0]
 		
