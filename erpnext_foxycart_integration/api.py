@@ -180,7 +180,7 @@ def make_address(customer, foxycart_data):
 
 		country = frappe.get_all("Country", filters={"code": country_code})[0]
 		
-		territory = frappe.get_all("Territory", filters={"id": country_code.strip().lower()})
+		territory = frappe.get_all("Territory", filters={"name": country_code})
 		if territory:
 			territory_name = territory[0].name
 		else:
