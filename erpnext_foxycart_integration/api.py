@@ -102,6 +102,7 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 		"customer": customer,
 		"order_type": "Shopping Cart",
 		"po_no": foxycart_data.get("id")
+
 	})
 	sales_items = []
 	
@@ -124,7 +125,7 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 				"rate": item.get("price")
 			})
 
-	sales_order.set("sales_order_details", sales_items)
+	sales_order.set("items", sales_items)
 	
 	# taxes = []
 	# if cint(foxycart_data.get("shipping_total")) or foxycart_data.get("shipto_shipping_service_description"):
