@@ -144,10 +144,10 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 	# 		"tax_amount": cint(foxycart_data.get("tax_total"))
 	# 	})
 	sales_order.set("taxes", [])
+
 	sales_order.customer_address = address
 	sales_order.shipping_address_name = address
 	# sales_order.status = "Draft"
-	sales_order.flags.ignore_permissions = True
 	sales_order.save(ignore_permissions = True)
 	# sales_order.submit()
 
