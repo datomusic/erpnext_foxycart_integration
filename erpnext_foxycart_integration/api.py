@@ -81,8 +81,8 @@ def find_customer(customer_email):
 
 
 def make_customer(foxycart_data, foxycart_settings):
-	customer = frappe.new_doc("Customer")
-	customer.update({
+	customer = frappe.get_doc({
+		"DocType": "Customer",
 		"customer_name": (foxycart_data.get("customer_first_name") + " " + foxycart_data.get("customer_last_name")).title(),
 		"customer_email": foxycart_data.get("customer_email"),
 		"customer_type": foxycart_settings.customer_type or "Individual",
@@ -90,7 +90,8 @@ def make_customer(foxycart_data, foxycart_settings):
 		"territory": foxycart_data.get("customer_country") or foxycart_data.get("country") or foxycart_settings.territory or "All Territories"
 	})
 	customer.flags.ignore_permissions=True
-	customer.save()
+	customer.insert()
+	# customer.save()
 	frappe.db.commit()
 	return customer.name
 
