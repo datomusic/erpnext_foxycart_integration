@@ -8,7 +8,7 @@ from werkzeug.wrappers import Response
 
 from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
-from frappe.utils import cint
+from frappe.utils import cint, nowdate
 
 @frappe.whitelist(allow_guest=True)
 def push():
@@ -81,8 +81,8 @@ def find_customer(customer_email):
 
 
 def make_customer(foxycart_data, foxycart_settings):
-	customer = frappe.new_doc("Customer")
-	customer.update({
+	customer = frappe.get_doc({
+		"DocType": "Customer",
 		"customer_name": (foxycart_data.get("customer_first_name") + " " + foxycart_data.get("customer_last_name")).title(),
 		"customer_email": foxycart_data.get("customer_email"),
 		"customer_type": foxycart_settings.customer_type or "Individual",
@@ -90,7 +90,8 @@ def make_customer(foxycart_data, foxycart_settings):
 		"territory": foxycart_data.get("customer_country") or foxycart_data.get("country") or foxycart_settings.territory or "All Territories"
 	})
 	customer.flags.ignore_permissions=True
-	customer.save()
+	customer.insert()
+	# customer.save()
 	frappe.db.commit()
 	return customer.name
 
@@ -99,7 +100,9 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 	sales_order = frappe.new_doc("Sales Order")
 	sales_order.update({
 		"customer": customer,
-		"order_type": "Shopping Cart"
+		"order_type": "Shopping Cart",
+		"po_no": foxycart_data.get("id")
+
 	})
 	sales_items = []
 	
@@ -117,14 +120,12 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 		else:
 			sales_items.append({
 				"item_code": product_name,
-				"item_name": product_name,
+				"delivery_date": nowdate(),
 				"qty": item.get("quantity"),
-				"uom": foxycart_settings.uom or "Nos",
-				"conversion_factor": foxycart_settings.conversion_factor or 1,
 				"rate": item.get("price")
 			})
 
-	sales_order.set("sales_order_details", sales_items)
+	sales_order.set("items", sales_items)
 	
 	# taxes = []
 	# if cint(foxycart_data.get("shipping_total")) or foxycart_data.get("shipto_shipping_service_description"):
@@ -147,7 +148,7 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 	sales_order.shipping_address_name = address
 	# sales_order.status = "Draft"
 	sales_order.flags.ignore_permissions = True
-	sales_order.save()
+	sales_order.save(ignore_permissions = True)
 	# sales_order.submit()
 
 	frappe.db.commit()
@@ -155,14 +156,16 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 	return sales_order.name
 
 def find_address(customer, foxycart_data):
+	shipping_data = foxycart_data.get('_embedded').get("fx:shipments")[0]
+
 	address = frappe.get_all("Address", filters={
-		"address_title": '%s %s' % (foxycart_data.get("first_name"), foxycart_data.get("last_name")),
-		"address_line1": foxycart_data.get("address1"),
-		"address_line2": foxycart_data.get("address2"),
+		"address_title": '%s %s' % (shipping_data.get("first_name"), shipping_data.get("last_name")),
+		"address_line1": shipping_data.get("address1"),
+		"address_line2": shipping_data.get("address2"),
 		"address_type": "Shipping",
-		"city": foxycart_data.get("city"),
-		"state": foxycart_data.get("region"),
-		"pincode": foxycart_data.get("postal_code")
+		"city": shipping_data.get("city"),
+		"state": shipping_data.get("region"),
+		"pincode": shipping_data.get("postal_code")
 	})
 	if address:
 		return address[0].name
@@ -186,7 +189,8 @@ def make_address(customer, foxycart_data):
 			territory_name = "All Territories"
 
 		address.update({
-			"address_title": '%s %s' % (foxycart_data.get("first_name"), foxycart_data.get("last_name")),
+			"address_title": '%s %s' % (shipping_data.get("first_name"), shipping_data.get("last_name")),
+			"contact_person": '%s %s' % (shipping_data.get("first_name"), shipping_data.get("last_name")),
 			"address_line1": shipping_data.get("address1"),
 			"address_line2": shipping_data.get("address2"),
 			"address_type": "Shipping",
