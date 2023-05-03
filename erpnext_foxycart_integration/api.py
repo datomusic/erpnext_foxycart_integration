@@ -162,7 +162,7 @@ def find_address(customer, foxycart_data):
 		"address_type": "Shipping",
 		"city": foxycart_data.get("city"),
 		"state": foxycart_data.get("region"),
-		"pincode": foxycart_data.get("customer_postal_code")
+		"pincode": foxycart_data.get("postal_code")
 	})
 	if address:
 		return address[0].name
@@ -173,9 +173,10 @@ def make_address(customer, foxycart_data):
 
 	billing_data = foxycart_data.get('_embedded').get("fx:billing_addresses")[0]
 	customer_data = foxycart_data.get('_embedded').get("fx:customer")
+    shipping_data = foxycart_data.get('_embedded').get("fx:shipments")[0]
 
 	if billing_data:
-		country_code = billing_data.get("customer_country")
+		country_code = shipping_data.get("customer_country")
 
 		country = frappe.get_all("Country", filters={"code": country_code})[0]
 		
@@ -187,15 +188,15 @@ def make_address(customer, foxycart_data):
 
 		address.update({
 			"address_title": '%s %s' % (foxycart_data.get("first_name"), foxycart_data.get("last_name")),
-			"address_line1": billing_data.get("address1"),
-			"address_line2": billing_data.get("address2"),
+			"address_line1": shipping_data.get("address1"),
+			"address_line2": shipping_data.get("address2"),
 			"address_type": "Shipping",
-			"city": billing_data.get("city"),
-			"state": billing_data.get("region"),
+			"city": shipping_data.get("city"),
+			"state": shipping_data.get("region"),
 			"country": country.name,
-			"pincode": billing_data.get("postal_code"),
+			"pincode": shipping_data.get("postal_code"),
 			"email_id": customer_data.get("email"),
-			"phone": billing_data.get("customer_phone"),
+			"phone": shipping_data.get("phone"),
 			"territory": territory_name
 		})
 
