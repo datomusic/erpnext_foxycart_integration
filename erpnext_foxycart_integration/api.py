@@ -19,7 +19,7 @@ def push():
 	signature = hmac.new(api_key.encode("utf-8"), frappe.request.data, hashlib.sha256).hexdigest()
 
 	# If the signature matches, we can assume it's a payload from Foxy.io
-if signature == frappe.request.headers.get("Foxy-Webhook-Signature") and frappe.request.method == "POST":
+	if signature == frappe.request.headers.get("Foxy-Webhook-Signature") and frappe.request.method == "POST":
 		response = Response()
 
 		# Try creating a sales order and connected models with the payload
