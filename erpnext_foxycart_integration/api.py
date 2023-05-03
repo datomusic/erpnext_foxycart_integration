@@ -162,7 +162,7 @@ def find_address(customer, foxycart_data):
 		"address_type": "Shipping",
 		"city": foxycart_data.get("city"),
 		"state": foxycart_data.get("region"),
-		"pincode": foxycart_data.get("postal_code")
+		"pincode": foxycart_data.get("customer_postal_code")
 	})
 	if address:
 		return address[0].name
