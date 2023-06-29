@@ -82,7 +82,7 @@ def find_customer(customer_email):
 
 def make_customer(foxycart_data, foxycart_settings):
 	customer = frappe.get_doc({
-		"DocType": "Customer",
+		"doctype": "Customer",
 		"customer_name": (foxycart_data.get("customer_first_name") + " " + foxycart_data.get("customer_last_name")).title(),
 		"customer_email": foxycart_data.get("customer_email"),
 		"customer_type": foxycart_settings.customer_type or "Individual",
@@ -147,7 +147,6 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 
 	sales_order.customer_address = address
 	sales_order.shipping_address_name = address
-	# sales_order.status = "Draft"
 	sales_order.save(ignore_permissions = True)
 	# sales_order.submit()
 
