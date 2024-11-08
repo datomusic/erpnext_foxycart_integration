@@ -118,7 +118,7 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 			print(f"Product: {product_name} not found")
 
 		else:
-            item_code = frappe.db.get_value("Item", {"item_name" : product_name}, "name")
+			item_code = frappe.db.get_value("Item", {"item_name" : product_name}, "name")
 			sales_items.append({
 				"item_code": item_code,
 				"delivery_date": nowdate(),
