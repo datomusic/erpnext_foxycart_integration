@@ -82,7 +82,7 @@ def find_customer(customer_email):
 
 def make_customer(foxycart_data, foxycart_settings):
 	customer = frappe.get_doc({
-		"DocType": "Customer",
+		"doctype": "Customer",
 		"customer_name": (foxycart_data.get("customer_first_name") + " " + foxycart_data.get("customer_last_name")).title(),
 		"customer_email": foxycart_data.get("customer_email"),
 		"customer_type": foxycart_settings.customer_type or "Individual",
@@ -118,8 +118,9 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 			print(f"Product: {product_name} not found")
 
 		else:
+			item_code = frappe.db.get_value("Item", {"item_name" : product_name}, "name")
 			sales_items.append({
-				"item_code": product_name,
+				"item_code": item_code,
 				"delivery_date": nowdate(),
 				"qty": item.get("quantity"),
 				"rate": item.get("price")
@@ -144,10 +145,9 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 	# 		"tax_amount": cint(foxycart_data.get("tax_total"))
 	# 	})
 	sales_order.set("taxes", [])
+
 	sales_order.customer_address = address
 	sales_order.shipping_address_name = address
-	# sales_order.status = "Draft"
-	sales_order.flags.ignore_permissions = True
 	sales_order.save(ignore_permissions = True)
 	# sales_order.submit()
 
