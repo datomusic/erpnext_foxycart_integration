@@ -6,8 +6,6 @@ import hmac
 from .foxyutils import decrypt_data
 from werkzeug.wrappers import Response
 
-from erpnext.selling.doctype.sales_order.sales_order import make_sales_invoice
-from erpnext.accounts.doctype.payment_entry.payment_entry import get_payment_entry
 from frappe.utils import cint, nowdate
 
 @frappe.whitelist(allow_guest=True)
@@ -59,18 +57,9 @@ def process_new_order(foxycart_data):
 		if not address:
 			address = make_address(customer, foxycart_data)
 
-	make_sales_order(customer, address, foxycart_data, foxycart_settings)
-	# sales_invoice = make_sales_invoice(sales_order, ignore_permissions=True)
-	# sales_invoice.save()
-	# sales_invoice.submit()
+	sales_order = make_sales_order(customer, address, foxycart_data, foxycart_settings)
+	make_payment_entry(customer, sales_order, foxycart_data, foxycart_settings)
 	frappe.db.commit()
-	# payment_entry = get_payment_entry("Sales Invoice", sales_invoice.name)
-	# payment_entry.reference_no = foxycart_data.get("id")
-	# payment_entry.reference_date = foxycart_data.get("transaction_date")
-	# payment_entry.flags.ignore_permissions= True
-	# payment_entry.save()
-	# payment_entry.submit()
-	# frappe.db.commit()
 
 def find_customer(customer_email):
 	customer = frappe.get_all("Customer", filters={"customer_email": customer_email})
@@ -115,7 +104,7 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 		product_name = item.get("name")
 
 		if not frappe.db.exists("Item", {"item_name" : product_name}):
-			print(f"Product: {product_name} not found")
+			print("Product: {0} not found".format(product_name))
 
 		else:
 			item_code = frappe.db.get_value("Item", {"item_name" : product_name}, "name")
@@ -149,11 +138,59 @@ def make_sales_order(customer, address, foxycart_data, foxycart_settings):
 	sales_order.customer_address = address
 	sales_order.shipping_address_name = address
 	sales_order.save(ignore_permissions = True)
-	# sales_order.submit()
+	
+	if foxycart_settings.submit_sales_order:
+		sales_order.submit()
 
-	frappe.db.commit()
+	return sales_order
 
-	return sales_order.name
+
+def make_payment_entry(customer, sales_order, foxycart_data, foxycart_settings):
+	# Get payment gateway from foxycart data
+	try:
+		# Foxycart can have multiple transactions, we'll use the first one
+		transaction = foxycart_data.get("_embedded").get("fx:transactions")[0]
+		gateway_name = transaction.get("type")
+	except (IndexError, AttributeError, TypeError):
+		frappe.log_error("Could not find payment gateway in FoxyCart data", "FoxyCart Integration Error")
+		return
+
+	# Find matching payment gateway mapping in settings
+	payment_mapping = None
+	for mapping in foxycart_settings.payment_gateway_mappings:
+		if mapping.foxycart_gateway_name == gateway_name:
+			payment_mapping = mapping
+			break
+	
+	if not payment_mapping:
+		frappe.log_error("No payment mapping found for gateway: {0}".format(gateway_name), "FoxyCart Integration Error")
+		return
+
+	# Create Payment Entry
+	payment_entry = frappe.new_doc("Payment Entry")
+	payment_entry.payment_type = "Receive"
+	payment_entry.mode_of_payment = payment_mapping.mode_of_payment
+	payment_entry.party_type = "Customer"
+	payment_entry.party = customer
+	payment_entry.paid_amount = foxycart_data.get("total")
+	payment_entry.received_amount = foxycart_data.get("total")
+	payment_entry.paid_to = payment_mapping.payment_account
+	payment_entry.reference_no = foxycart_data.get("id")
+	payment_entry.reference_date = foxycart_data.get("transaction_date")
+
+	payment_entry.append("references", {
+		"reference_doctype": "Sales Order",
+		"reference_name": sales_order.name,
+		"allocated_amount": foxycart_data.get("total")
+	})
+
+	payment_entry.flags.ignore_permissions = True
+	payment_entry.save()
+
+	if foxycart_settings.submit_payment_entry:
+		payment_entry.submit()
+
+	return payment_entry
 
 def find_address(customer, foxycart_data):
 	shipping_data = foxycart_data.get('_embedded').get("fx:shipments")[0]
